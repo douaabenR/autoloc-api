@@ -48,8 +48,7 @@ public class Vehicule {
     @JoinColumn(name = "id_agence", nullable = false)
     private Agence agence;
 
-    @OneToMany(mappedBy = "vehicule")
-    private List<Maintenance> maintenances = new ArrayList<>();
+
 
     @OneToMany(mappedBy = "vehicule")
     private List<Reservation> reservations = new ArrayList<>();
