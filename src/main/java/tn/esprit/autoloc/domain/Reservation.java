@@ -1,6 +1,8 @@
 package tn.esprit.autoloc.domain;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +12,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "reservation")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idReservation")
 @Getter
 @Setter
 @NoArgsConstructor

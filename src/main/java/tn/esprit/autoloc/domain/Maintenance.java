@@ -1,15 +1,19 @@
 package tn.esprit.autoloc.domain;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "maintenance")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idMaintenance")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,6 +32,9 @@ public class  Maintenance {
 
     @Column(nullable = false, length = 500)
     private String description;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal cout;
 
     @ManyToOne
     private Vehicule vehicule;
