@@ -10,7 +10,7 @@ import tn.esprit.autoloc.service.IEquipementService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/equipements")
+@RequestMapping("/equipements")
 @RequiredArgsConstructor
 public class EquipementController {
 

@@ -11,7 +11,7 @@ import tn.esprit.autoloc.service.IPaiementService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/paiements")
+@RequestMapping("/paiements")
 @RequiredArgsConstructor
 public class PaiementController {
 

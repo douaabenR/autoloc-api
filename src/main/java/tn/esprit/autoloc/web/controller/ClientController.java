@@ -10,7 +10,7 @@ import tn.esprit.autoloc.service.IClientService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/clients")
+@RequestMapping("/clients")
 @RequiredArgsConstructor
 public class ClientController {
 

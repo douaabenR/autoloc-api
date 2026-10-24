@@ -10,7 +10,7 @@ import tn.esprit.autoloc.service.IAgenceService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/agences")
+@RequestMapping("/agences")
 @RequiredArgsConstructor
 public class AgenceController {
 
