@@ -16,7 +16,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "vehicule")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idVehicule")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idVehicule", scope = Vehicule.class)
 @Getter
 @Setter
 @NoArgsConstructor

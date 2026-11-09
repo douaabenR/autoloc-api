@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import tn.esprit.autoloc.domain.Employe;
 import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.repository.IEmployeRepository;
+import tn.esprit.autoloc.repository.IAgenceRepository;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
 public class EmployeServiceImpl implements IEmployeService {
 
     private final IEmployeRepository employeRepository;
+    private final IAgenceRepository agenceRepository;
 
     @Override
     public Employe create(Employe employe) {
@@ -20,6 +22,7 @@ public class EmployeServiceImpl implements IEmployeService {
         if (employe.getIdEmploye() != null) {
             throw new IllegalArgumentException("Un nouvel employé ne doit pas avoir d'identifiant.");
         }
+        employe.setAgence(findAgence(employe));
         return employeRepository.save(employe);
     }
 
@@ -41,7 +44,7 @@ public class EmployeServiceImpl implements IEmployeService {
         existing.setNom(employe.getNom());
         existing.setPrenom(employe.getPrenom());
         existing.setRole(employe.getRole());
-        existing.setAgence(employe.getAgence());
+        existing.setAgence(findAgence(employe));
         return employeRepository.save(existing);
     }
 
@@ -60,5 +63,13 @@ public class EmployeServiceImpl implements IEmployeService {
         if (employe.getRole() == null) {
             throw new IllegalArgumentException("Le poste (rôle) de l'employé est obligatoire.");
         }
+    }
+
+    private tn.esprit.autoloc.domain.Agence findAgence(Employe employe) {
+        if (employe.getAgence() == null || employe.getAgence().getIdAgence() == null) {
+            throw new IllegalArgumentException("L'agence de l'employé est obligatoire. Fournissez agenceId.");
+        }
+        Long id = employe.getAgence().getIdAgence();
+        return agenceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Agence", id));
     }
 }

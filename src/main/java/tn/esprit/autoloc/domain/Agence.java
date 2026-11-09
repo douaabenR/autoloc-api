@@ -12,7 +12,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "agence")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idAgence")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idAgence", scope = Agence.class)
 @Getter
 @Setter
 @NoArgsConstructor

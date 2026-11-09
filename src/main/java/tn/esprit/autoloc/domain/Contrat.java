@@ -14,7 +14,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "contrat")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idContrat")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idContrat", scope = Contrat.class)
 @Getter
 @Setter
 @NoArgsConstructor

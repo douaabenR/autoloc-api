@@ -1,12 +1,10 @@
 package tn.esprit.autoloc.web.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import tn.esprit.autoloc.domain.Paiement;
+import org.springframework.web.bind.annotation.*;
 import tn.esprit.autoloc.service.IPaiementService;
+import tn.esprit.autoloc.web.dto.PaiementResponseDto;
+import tn.esprit.autoloc.web.mapper.PaiementMapper;
 
 import java.util.List;
 
@@ -14,16 +12,16 @@ import java.util.List;
 @RequestMapping("/paiements")
 @RequiredArgsConstructor
 public class PaiementController {
-
     private final IPaiementService paiementService;
+    private final PaiementMapper paiementMapper;
 
     @GetMapping("/{id}")
-    public Paiement findById(@PathVariable("id") Long id) {
-        return paiementService.findById(id);
+    public PaiementResponseDto findById(@PathVariable Long id) {
+        return paiementMapper.toDto(paiementService.findById(id));
     }
 
     @GetMapping
-    public List<Paiement> findAll() {
-        return paiementService.findAll();
+    public List<PaiementResponseDto> findAll() {
+        return paiementService.findAll().stream().map(paiementMapper::toDto).toList();
     }
 }

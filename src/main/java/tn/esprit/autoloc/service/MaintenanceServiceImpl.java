@@ -3,8 +3,10 @@ package tn.esprit.autoloc.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.esprit.autoloc.domain.Maintenance;
+import tn.esprit.autoloc.domain.Vehicule;
 import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.repository.IMaintenanceRepository;
+import tn.esprit.autoloc.repository.IVehiculeRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.List;
 public class MaintenanceServiceImpl implements IMaintenanceService {
 
     private final IMaintenanceRepository maintenanceRepository;
+    private final IVehiculeRepository vehiculeRepository;
 
     @Override
     public Maintenance create(Maintenance maintenance) {
@@ -21,6 +24,7 @@ public class MaintenanceServiceImpl implements IMaintenanceService {
         if (maintenance.getIdMaintenance() != null) {
             throw new IllegalArgumentException("Une nouvelle maintenance ne doit pas avoir d'identifiant.");
         }
+        maintenance.setVehicule(resolveVehicule(maintenance.getVehicule()));
         return maintenanceRepository.save(maintenance);
     }
 
@@ -43,7 +47,7 @@ public class MaintenanceServiceImpl implements IMaintenanceService {
         existing.setDateFin(maintenance.getDateFin());
         existing.setDescription(maintenance.getDescription());
         existing.setCout(maintenance.getCout());
-        existing.setVehicule(maintenance.getVehicule());
+        existing.setVehicule(resolveVehicule(maintenance.getVehicule()));
         return maintenanceRepository.save(existing);
     }
 
@@ -66,5 +70,11 @@ public class MaintenanceServiceImpl implements IMaintenanceService {
         if (maintenance.getDateFin() != null && maintenance.getDateFin().isBefore(maintenance.getDateDebut())) {
             throw new IllegalArgumentException("La date de fin doit être égale ou postérieure à la date de début.");
         }
+    }
+
+    private Vehicule resolveVehicule(Vehicule vehicule) {
+        if (vehicule == null || vehicule.getIdVehicule() == null) return null;
+        Long id = vehicule.getIdVehicule();
+        return vehiculeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Véhicule", id));
     }
 }

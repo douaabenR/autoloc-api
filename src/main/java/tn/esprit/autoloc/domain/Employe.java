@@ -10,7 +10,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "employe")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idEmploye")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idEmploye", scope = Employe.class)
 @Getter
 @Setter
 @NoArgsConstructor

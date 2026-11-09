@@ -1,11 +1,14 @@
 package tn.esprit.autoloc.web.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tn.esprit.autoloc.domain.Client;
 import tn.esprit.autoloc.service.IClientService;
+import tn.esprit.autoloc.web.dto.ClientRequestDto;
+import tn.esprit.autoloc.web.dto.ClientResponseDto;
+import tn.esprit.autoloc.web.mapper.ClientMapper;
 
 import java.util.List;
 
@@ -13,31 +16,31 @@ import java.util.List;
 @RequestMapping("/clients")
 @RequiredArgsConstructor
 public class ClientController {
-
     private final IClientService clientService;
+    private final ClientMapper clientMapper;
 
     @PostMapping
-    public ResponseEntity<Client> create(@RequestBody Client client) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(clientService.create(client));
+    public ResponseEntity<ClientResponseDto> create(@Valid @RequestBody ClientRequestDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(clientMapper.toDto(clientService.create(clientMapper.toEntity(dto))));
     }
 
     @GetMapping("/{id}")
-    public Client findById(@PathVariable("id") Long id) {
-        return clientService.findById(id);
+    public ClientResponseDto findById(@PathVariable Long id) {
+        return clientMapper.toDto(clientService.findById(id));
     }
 
     @GetMapping
-    public List<Client> findAll() {
-        return clientService.findAll();
+    public List<ClientResponseDto> findAll() {
+        return clientService.findAll().stream().map(clientMapper::toDto).toList();
     }
 
     @PutMapping("/{id}")
-    public Client update(@PathVariable("id") Long id, @RequestBody Client client) {
-        return clientService.update(id, client);
+    public ClientResponseDto update(@PathVariable Long id, @Valid @RequestBody ClientRequestDto dto) {
+        return clientMapper.toDto(clientService.update(id, clientMapper.toEntity(dto)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         clientService.deleteById(id);
         return ResponseEntity.noContent().build();
     }

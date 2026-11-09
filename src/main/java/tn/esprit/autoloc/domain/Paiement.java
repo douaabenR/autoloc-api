@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "paiement")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idPaiement")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idPaiement", scope = Paiement.class)
 @Getter
 @Setter
 @NoArgsConstructor

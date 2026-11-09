@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "maintenance")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idMaintenance")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idMaintenance", scope = Maintenance.class)
 @Getter
 @Setter
 @NoArgsConstructor
