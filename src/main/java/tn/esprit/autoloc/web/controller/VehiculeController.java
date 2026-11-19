@@ -24,6 +24,20 @@ public class VehiculeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(vehiculeMapper.toDto(vehiculeService.create(vehiculeMapper.toEntity(dto))));
     }
 
+    @PutMapping("/{idVehicule}/equipements/{idEquipement}")
+    public VehiculeResponseDto affecterVehiculeAEquipement(
+            @PathVariable Long idVehicule,
+            @PathVariable Long idEquipement) {
+        return vehiculeService.affecterVehiculeAEquipement(idVehicule, idEquipement);
+    }
+
+    @PostMapping("/{immatriculation}/maintenance")
+    public VehiculeResponseDto affecterMaintenanceAvehicule(
+            @PathVariable String immatriculation,
+            @RequestParam String description) {
+        return vehiculeService.affecterMaintenanceAvehicule(description, immatriculation);
+    }
+
     @GetMapping("/{id}")
     public VehiculeResponseDto findById(@PathVariable Long id) {
         return vehiculeMapper.toDto(vehiculeService.findById(id));

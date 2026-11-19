@@ -8,8 +8,12 @@ import tn.esprit.autoloc.domain.Reservation;
 import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.repository.IContratRepository;
 import tn.esprit.autoloc.repository.IReservationRepository;
+import tn.esprit.autoloc.web.dto.ContratResponseDto;
+import tn.esprit.autoloc.web.mapper.ContratMapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -19,6 +23,7 @@ public class ContratServiceImpl implements IContratService {
 
     private final IContratRepository contratRepository;
     private final IReservationRepository reservationRepository;
+    private final ContratMapper contratMapper;
 
     @Override
     public Contrat create(Contrat contrat) {
@@ -61,6 +66,43 @@ public class ContratServiceImpl implements IContratService {
             throw new ResourceNotFoundException("Contrat", id);
         }
         contratRepository.deleteById(id);
+    }
+
+    @Override
+    public ContratResponseDto affecterContratAReservation(
+            LocalDate dateSignature, LocalDate dateDebut, LocalDate dateFin) {
+        if (dateSignature == null || dateDebut == null || dateFin == null) {
+            throw new IllegalArgumentException(
+                    "Les dates de signature et de réservation sont obligatoires.");
+        }
+        if (dateFin.isBefore(dateDebut)) {
+            throw new IllegalArgumentException(
+                    "La date de fin doit être égale ou postérieure à la date de début.");
+        }
+
+        Reservation reservation = reservationRepository
+                .findFirstByDateDebutAndDateFin(dateDebut, dateFin)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Réservation", dateDebut + " - " + dateFin));
+
+        if (reservation.getContrat() != null) {
+            throw new IllegalArgumentException(
+                    "Cette réservation possède déjà un contrat.");
+        }
+
+        long nombreJours = ChronoUnit.DAYS.between(dateDebut, dateFin);
+        BigDecimal montantTotal = reservation.getVehicule().getTarifJournalier()
+                .multiply(BigDecimal.valueOf(nombreJours));
+
+        Contrat contrat = new Contrat();
+        contrat.setDateSignature(dateSignature);
+        contrat.setMontantTotal(montantTotal);
+        contrat.setValide(true);
+        contrat.setReservation(reservation);
+
+        Contrat saved = contratRepository.save(contrat);
+        reservation.setContrat(saved);
+        return contratMapper.toDto(saved);
     }
 
     private void validate(Contrat contrat) {

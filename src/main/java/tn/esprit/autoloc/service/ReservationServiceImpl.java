@@ -2,30 +2,39 @@ package tn.esprit.autoloc.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.esprit.autoloc.domain.Client;
-import tn.esprit.autoloc.domain.Reservation;
-import tn.esprit.autoloc.domain.Vehicule;
-import tn.esprit.autoloc.exception.ResourceNotFoundException;
-import tn.esprit.autoloc.repository.IClientRepository;
-import tn.esprit.autoloc.repository.IReservationRepository;
-import tn.esprit.autoloc.repository.IVehiculeRepository;
+import org.springframework.transaction.annotation.Transactional;
 
+import tn.esprit.autoloc.domain.*;
+import tn.esprit.autoloc.exception.ResourceNotFoundException;
+import tn.esprit.autoloc.repository.*;
+import tn.esprit.autoloc.web.dto.ReservationResponseDto;
+import tn.esprit.autoloc.web.dto.ReservationWithContratRequestDTO;
+import tn.esprit.autoloc.web.mapper.ReservationMapper;
+
+import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ReservationServiceImpl implements IReservationService {
 
     private final IReservationRepository reservationRepository;
     private final IClientRepository clientRepository;
     private final IVehiculeRepository vehiculeRepository;
+    private final IContratRepository contratRepository;
+    private final ReservationMapper reservationMapper;
 
     @Override
     public Reservation create(Reservation reservation) {
         validate(reservation);
+
         if (reservation.getIdReservation() != null) {
-            throw new IllegalArgumentException("Une nouvelle réservation ne doit pas avoir d'identifiant.");
+            throw new IllegalArgumentException(
+                    "Une nouvelle réservation ne doit pas avoir d'identifiant.");
         }
+
         resolveAssociations(reservation);
         return reservationRepository.save(reservation);
     }
@@ -33,7 +42,8 @@ public class ReservationServiceImpl implements IReservationService {
     @Override
     public Reservation findById(Long id) {
         return reservationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Réservation", id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Réservation", id));
     }
 
     @Override
@@ -44,12 +54,15 @@ public class ReservationServiceImpl implements IReservationService {
     @Override
     public Reservation update(Long id, Reservation reservation) {
         validate(reservation);
+
         Reservation existing = findById(id);
+
         existing.setDateDebut(reservation.getDateDebut());
         existing.setDateFin(reservation.getDateFin());
         existing.setStatut(reservation.getStatut());
         existing.setVehicule(findVehicule(reservation));
         existing.setClient(findClient(reservation));
+
         return reservationRepository.save(existing);
     }
 
@@ -58,18 +71,117 @@ public class ReservationServiceImpl implements IReservationService {
         if (!reservationRepository.existsById(id)) {
             throw new ResourceNotFoundException("Réservation", id);
         }
+
         reservationRepository.deleteById(id);
     }
 
+    // 1. Affecter une réservation à un client
+    @Override
+    public ReservationResponseDto affecterReservationAClient(
+            Long idReservation, String nom, String prenom) {
+
+        if (nom == null || nom.isBlank() || prenom == null || prenom.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Le nom et le prénom du client sont obligatoires.");
+        }
+
+        Reservation reservation = findById(idReservation);
+
+        Client client = clientRepository.findByNomAndPrenom(nom, prenom)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Client introuvable"));
+
+        reservation.setClient(client);
+
+        Reservation saved = reservationRepository.save(reservation);
+
+        return reservationMapper.toDto(saved);
+    }
+
+    // 2. Créer une réservation et son contrat associé
+    @Override
+    public ReservationResponseDto creerReservationEtContratAssocie(
+            ReservationWithContratRequestDTO requestDTO) {
+
+        if (requestDTO == null
+                || requestDTO.dateSignature() == null
+                || requestDTO.dateDebut() == null
+                || requestDTO.dateFin() == null
+                || requestDTO.statut() == null
+                || requestDTO.vehiculeId() == null
+                || requestDTO.clientId() == null) {
+            throw new IllegalArgumentException(
+                    "Toutes les données de réservation et de contrat sont obligatoires.");
+        }
+
+        if (requestDTO.dateFin().isBefore(requestDTO.dateDebut())) {
+            throw new IllegalArgumentException(
+                    "La date de fin doit être après la date de début.");
+        }
+
+        Client client = clientRepository.findById(requestDTO.clientId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client",
+                                requestDTO.clientId()));
+
+        Vehicule vehicule = vehiculeRepository.findById(requestDTO.vehiculeId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Véhicule",
+                                requestDTO.vehiculeId()));
+
+        if (vehicule.getStatut() != StatutVehicule.DISPONIBLE) {
+            throw new IllegalArgumentException(
+                    "Le véhicule n'est pas disponible.");
+        }
+
+        Reservation reservation = new Reservation();
+
+        reservation.setDateDebut(requestDTO.dateDebut());
+        reservation.setDateFin(requestDTO.dateFin());
+        reservation.setStatut(requestDTO.statut());
+        reservation.setClient(client);
+        reservation.setVehicule(vehicule);
+
+        Reservation savedReservation =
+                reservationRepository.save(reservation);
+
+        long nombreJours = ChronoUnit.DAYS.between(
+                requestDTO.dateDebut(), requestDTO.dateFin());
+
+        BigDecimal montantTotal = vehicule.getTarifJournalier()
+                .multiply(BigDecimal.valueOf(nombreJours));
+
+        Contrat contrat = new Contrat();
+
+        contrat.setDateSignature(requestDTO.dateSignature());
+        contrat.setMontantTotal(montantTotal);
+        contrat.setValide(true);
+        contrat.setReservation(savedReservation);
+
+        contratRepository.save(contrat);
+        savedReservation.setContrat(contrat);
+
+        return reservationMapper.toDto(savedReservation);
+    }
+
     private void validate(Reservation reservation) {
-        if (reservation == null || reservation.getDateDebut() == null || reservation.getDateFin() == null) {
-            throw new IllegalArgumentException("Les dates de début et de fin de la réservation sont obligatoires.");
+
+        if (reservation == null
+                || reservation.getDateDebut() == null
+                || reservation.getDateFin() == null) {
+            throw new IllegalArgumentException(
+                    "Les dates de réservation sont obligatoires.");
         }
+
         if (reservation.getStatut() == null) {
-            throw new IllegalArgumentException("Le statut de la réservation est obligatoire.");
+            throw new IllegalArgumentException(
+                    "Le statut de réservation est obligatoire.");
         }
-        if (reservation.getDateFin().isBefore(reservation.getDateDebut())) {
-            throw new IllegalArgumentException("La date de fin doit être égale ou postérieure à la date de début.");
+
+        if (reservation.getDateFin().isBefore(
+                reservation.getDateDebut())) {
+            throw new IllegalArgumentException(
+                    "Date de fin invalide.");
         }
     }
 
@@ -79,20 +191,30 @@ public class ReservationServiceImpl implements IReservationService {
     }
 
     private Client findClient(Reservation reservation) {
-        if (reservation.getClient() == null || reservation.getClient().getIdClient() == null) {
-            throw new IllegalArgumentException("Le client est obligatoire. Fournissez client.idClient.");
+
+        if (reservation.getClient() == null
+                || reservation.getClient().getIdClient() == null) {
+            throw new IllegalArgumentException("Client obligatoire.");
         }
-        Long idClient = reservation.getClient().getIdClient();
-        return clientRepository.findById(idClient)
-                .orElseThrow(() -> new ResourceNotFoundException("Client", idClient));
+
+        Long id = reservation.getClient().getIdClient();
+
+        return clientRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client", id));
     }
 
     private Vehicule findVehicule(Reservation reservation) {
-        if (reservation.getVehicule() == null || reservation.getVehicule().getIdVehicule() == null) {
-            throw new IllegalArgumentException("Le véhicule est obligatoire. Fournissez vehicule.idVehicule.");
+
+        if (reservation.getVehicule() == null
+                || reservation.getVehicule().getIdVehicule() == null) {
+            throw new IllegalArgumentException("Véhicule obligatoire.");
         }
-        Long idVehicule = reservation.getVehicule().getIdVehicule();
-        return vehiculeRepository.findById(idVehicule)
-                .orElseThrow(() -> new ResourceNotFoundException("Véhicule", idVehicule));
+
+        Long id = reservation.getVehicule().getIdVehicule();
+
+        return vehiculeRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Véhicule", id));
     }
 }

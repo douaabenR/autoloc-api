@@ -9,7 +9,7 @@ import tn.esprit.autoloc.service.IReservationService;
 import tn.esprit.autoloc.web.dto.ReservationRequestDto;
 import tn.esprit.autoloc.web.dto.ReservationResponseDto;
 import tn.esprit.autoloc.web.mapper.ReservationMapper;
-
+import tn.esprit.autoloc.web.dto.ReservationWithContratRequestDTO;
 import java.util.List;
 
 @RestController
@@ -22,6 +22,21 @@ public class ReservationController {
     @PostMapping
     public ResponseEntity<ReservationResponseDto> create(@Valid @RequestBody ReservationRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(reservationMapper.toDto(reservationService.create(reservationMapper.toEntity(dto))));
+    }
+
+    @PutMapping("/{id}/client")
+    public ReservationResponseDto affecterReservationAClient(
+            @PathVariable Long id,
+            @RequestParam String nom,
+            @RequestParam String prenom) {
+        return reservationService.affecterReservationAClient(id, nom, prenom);
+    }
+
+    @PostMapping("/avec-contrat")
+    public ResponseEntity<ReservationResponseDto> creerReservationEtContratAssocie(
+            @Valid @RequestBody ReservationWithContratRequestDTO requestDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reservationService.creerReservationEtContratAssocie(requestDTO));
     }
 
     @GetMapping("/{id}")
